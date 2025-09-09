@@ -15,9 +15,32 @@ AppTone AI is a machine learning-based web application that analyzes app reviews
 - pandas, NumPy, scikit-learn
 - REST API for backend communication
 
-## Installation and Setup
+# AppTone AI
 
-1. Clone the repository:
+## Setup Instructions
+
+1. Create a dedicated folder for the project:
+   
 ```bash
+mkdir ~/Projects
+cd ~/Projects
+
+2. Clone the repository:
+
 git clone https://github.com/blxss-shreya/AppTone-AI.git
+cd AppTone-AI
+
+3. Activate the virtual environment:
+
+source venv/bin/activate
+
+4. Install dependencies:
+
+pip install -r requirements.txt
+
+5. Run the application:
+
+python main.py
+
+
 
