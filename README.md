@@ -43,4 +43,7 @@ pip install -r requirements.txt
 python main.py
 
 
-
+![Landing Page](static/screenshot1.png)
+![Single App Analysis](static/screenshot2.png)
+![Visual Data Displayed(single app analysis)](static/screenshot3.png)
+![Compare Two Apps](static/screenshot4.png)
