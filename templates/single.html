@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AppTone AI - Single App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0F2A2C, #1F3B3D);
+      color: #E0F7FA;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    p {
+      font-size: 1rem;
+      color: #B2DFDB;
+      margin-bottom: 1.5rem;
+    }
+    .input-box {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .input-box input {
+      flex: 1;
+      min-width: 220px;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      background: #1F3B3D;
+      color: #E0F7FA;
+    }
+    .input-box input::placeholder { color: #80CBC4; }
+    .input-box button {
+      background: #00BFA5;
+      color: #E0F7FA;
+      padding: 0.9rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 20px rgba(0, 191, 165, 0.5);
+    }
+    .input-box button:hover {
+      background: #008E76;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 142, 118, 0.6);
+    }
+    #result {
+      margin-top: 1.5rem;
+      text-align: left;
+      font-size: 1rem;
+    }
+    .sentiment-box {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .positive { background-color: #00C853; }
+    .neutral { background-color: #78909C; }
+    .negative { background-color: #E53935; }
+    canvas {
+      margin-top: 20px;
+      background: transparent;
+      border-radius: 8px;
+      padding: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Analyze Single App</h1>
+    <p>Enter an app name to see the overall sentiment of its reviews.</p>
+    <form id="predict-form">
+      <div class="input-box">
+        <input type="text" id="inputText" placeholder="Enter app name..." required>
+        <button type="submit">Analyze</button>
+      </div>
+    </form>
+    <div id="result"></div>
+    <canvas id="sentimentChart" width="300" height="300"></canvas>
+  </div>
+
+  <script>
+    function getSentimentClass(sentiment) {
+      if (sentiment.toLowerCase() === 'positive') return 'positive';
+      if (sentiment.toLowerCase() === 'neutral') return 'neutral';
+      return 'negative';
+    }
+
+
+document.getElementById('predict-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const appName = document.getElementById('inputText').value;
+  const resultDiv = document.getElementById('result');
+  const chartCanvas = document.getElementById('sentimentChart');
+  resultDiv.innerHTML = "Analyzing...";
+  chartCanvas.style.display = "none";
+
+  try {
+    const response = await fetch('/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: appName })
+    });
+    const data = await response.json();
+
+    if (data.error) {
+      resultDiv.innerHTML = `<span style="color:red;">Error: ${data.error}</span>`;
+    } else {
+      let chosenModel;
+      const vaderConfidence = Math.abs(data.vader.avg_compound);
+      const robertaConfidence = data.roberta.confidence;
+      if (vaderConfidence >= robertaConfidence) {
+        chosenModel = { name: 'VADER', sentiment: data.vader.overall, confidence: (vaderConfidence * 100).toFixed(1) };
+      } else {
+        chosenModel = { name: 'RoBERTa', sentiment: data.roberta.sentiment, confidence: (data.roberta.confidence * 100).toFixed(1) };
+      }
+      const sentimentClass = getSentimentClass(chosenModel.sentiment);
+
+      resultDiv.innerHTML = `
+        <div class="sentiment-box ${sentimentClass}">
+          Overall App Sentiment: ${chosenModel.sentiment}
+        </div>
+        <div>Confidence of Analysis:</div>
+        <div class="confidence-bar" style="height:12px; border-radius:6px; background:#ddd; overflow:hidden; margin-bottom:1rem;">
+          <div class="confidence-fill ${sentimentClass}" style="width:${chosenModel.confidence}%; height:100%; border-radius:6px; text-align:right; padding-right:5px; color:#fff; font-size:0.75rem; line-height:12px;">
+            ${chosenModel.confidence}%
+          </div>
+        </div>
+        <p><strong>Example Review:</strong> "${data.example_review}"</p>
+      `;
+
+      const counts = data.sentiment_counts;
+      const chartData = [counts.Positive, counts.Neutral, counts.Negative];
+      chartCanvas.style.display = "block";
+
+      if (window.sentimentChartInstance) {
+        window.sentimentChartInstance.destroy();
+      }
+
+      const ctx = chartCanvas.getContext('2d');
+
+      // Create gradients for each slice
+      const greenGradient = ctx.createLinearGradient(0, 0, 0, 300);
+      greenGradient.addColorStop(0, '#00E676'); // lighter green
+      greenGradient.addColorStop(1, '#00C853'); // darker green
+
+      const grayGradient = ctx.createLinearGradient(0, 0, 0, 300);
+      grayGradient.addColorStop(0, '#90A4AE');
+      grayGradient.addColorStop(1, '#607D8B');
+
+      const redGradient = ctx.createLinearGradient(0, 0, 0, 300);
+      redGradient.addColorStop(0, '#EF5350');
+      redGradient.addColorStop(1, '#E53935');
+
+      // Shadow plugin
+      const shadowPlugin = {
+        id: 'shadow',
+        beforeDraw: (chart) => {
+          const ctx = chart.ctx;
+          ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+          ctx.shadowBlur = 15;
+          ctx.shadowOffsetX = 6;
+          ctx.shadowOffsetY = 6;
+        },
+        afterDraw: (chart) => {
+          chart.ctx.restore();
+        }
+      };
+
+      Chart.register(shadowPlugin);
+
+      // Build chart
+      window.sentimentChartInstance = new Chart(chartCanvas, {
+        type: 'pie',
+        data: {
+          labels: ['Positive', 'Neutral', 'Negative'],
+          datasets: [{
+            data: chartData,
+            backgroundColor: [greenGradient, grayGradient, redGradient],
+            hoverOffset: 15
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#E0F7FA', font: { size: 14 } }
+            }
+          }
+        },
+        plugins: [shadowPlugin]
+      });
+    }
+  } catch (err) {
+    resultDiv.innerHTML = `<span style="color:red;">Error: ${err.message}</span>`;
+  }
+});
+</script>
+</body>
+</html>

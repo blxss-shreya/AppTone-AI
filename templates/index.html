@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AppTone AI - Landing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0F2A2C, #1F3B3D);
+      color: #E0F7FA;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      position: relative;
+    }
+    .container {
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #E0F7FA;
+    }
+    p {
+      font-size: 1rem;
+      color: #B2DFDB;
+      margin-bottom: 2rem;
+    }
+    .btn-container {
+      display: flex;
+      gap: 1rem;
+      flex-direction: column;
+      align-items: center;
+    }
+    .btn-container button {
+      width: 100%;
+      padding: 0.9rem 1.5rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: #00BFA5; /* vibrant teal accent */
+      color: #E0F7FA;
+      box-shadow: 0 6px 20px rgba(0, 191, 165, 0.5);
+    }
+    .btn-container button:hover {
+      background: #008E76; /* darker teal on hover */
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 142, 118, 0.6);
+    }
+    /* Logo in top-left */
+    .logo {
+      position: absolute;
+      top: 20px ;
+      left: 20px ;
+      width: 50px !important;
+      height: 50px !important;
+    }
+    @media (max-width: 600px) {
+      .logo {
+        width: 70px;
+        height: 70px;
+        top: 10px;    /* align with responsive About button */
+        left: 10px;
+      }
+    }
+    tagline {
+        font-size: 1rem;
+        color: #B2DFDB;
+        margin-bottom: 1.5rem;
+    }
+
+    .subtitle {
+        font-size: 0.95rem;
+        color: #A0CCC4; /* slightly lighter than tagline */
+        line-height: 1.5;
+        margin-bottom: 2rem;
+    }
+    .about-link {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  background: #00BFA5; /* vibrant teal */
+  color: #E0F7FA;
+  box-shadow: 0 6px 20px rgba(0, 191, 165, 0.5);
+  transition: all 0.3s ease;
+  text-decoration: none; /* removes underline */
+  display: inline-block;
+}
+
+.about-link:hover {
+  background: #008E76; /* darker teal */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 142, 118, 0.6);
+}
+
+    .about-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: #102F31;
+  background: #00BFA5;
+  padding: 1.5rem;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3);
+  transform: translateX(100%);
+  transition: transform 0.4s ease-in-out;
+  z-index: 9999;
+}
+
+.about-panel.open {
+  transform: translateX(0);
+}
+
+.about-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.about-header h2 {
+  font-size: 1.4rem;
+}
+
+.close-btn {
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.about-panel p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+  </style>
+</head>
+
+<body>
+  <!-- Logo in top-left using Flask static folder -->
+  <img class="logo" src="{{ url_for('static', filename='logo.png') }}" alt="AppTone AI Logo" style="width:80px; height:80px;">
+  <button class="about-link" onclick="toggleAbout()">About</button>
+  <div class="container">
+    <h1>AppTone AI</h1>
+    <p class="tagline">AI-powered sentiment insights from Google Play reviews</p>
+
+    <div class="btn-container">
+      <button onclick="location.href='/single'">Analyze Single App</button>
+      <button onclick="location.href='/compare_page'">Compare Two Apps</button>
+    </div>
+</div>
+<!-- Slide-in About Panel -->
+<div id="aboutPanel" class="about-panel">
+  <div class="about-header">
+    <h2>About AppTone AI</h2>
+    <span class="close-btn" onclick="toggleAbout()">&times;</span>
+  </div>
+  <p>
+    Go beyond star ratings and discover what users really think. AppTone AI analyzes Google Play reviews to reveal sentiment,
+    highlight pros and cons, and provide transparent confidence scores. Compare apps side by side to see which one truly resonates with users.
+  </p>
+</div>
+<script>
+function toggleAbout() {
+  document.getElementById('aboutPanel').classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

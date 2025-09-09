@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AppTone AI - Compare Apps</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0F2A2C, #1F3B3D);
+      color: #E0F7FA;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 900px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #E0F7FA;
+    }
+    p {
+      font-size: 1rem;
+      color: #B2DFDB;
+      margin-bottom: 1.5rem;
+    }
+    .input-box {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .input-box input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      background: #1F3B3D;
+      color: #E0F7FA;
+    }
+    .input-box input::placeholder { color: #80CBC4; }
+    .input-box button {
+      background: #00BFA5;
+      color: #E0F7FA;
+      padding: 0.9rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 20px rgba(0, 191, 165, 0.5);
+    }
+    .input-box button:hover {
+      background: #008E76;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 142, 118, 0.6);
+    }
+    #result {
+      margin-top: 1.5rem;
+      text-align: left;
+      font-size: 1rem;
+    }
+    .app-section {
+      margin-bottom: 2rem;
+    }
+    .sentiment-box {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .positive { background-color: #27ae60; }
+    .neutral { background-color: #607D8B; }
+    .negative { background-color: #c0392b; }
+    canvas {
+      background: #1F3B3D;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Compare Two Apps</h1>
+    <p>Enter two app names to compare the overall sentiment of both of their reviews.</p>
+    <form id="compare-form">
+      <div class="input-box">
+        <input type="text" id="app1" placeholder="App 1 name" required>
+        <input type="text" id="app2" placeholder="App 2 name" required>
+        <button type="submit">Compare</button>
+      </div>
+    </form>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    function getSentimentClass(sentiment) {
+      if (sentiment.toLowerCase() === 'positive') return 'positive';
+      if (sentiment.toLowerCase() === 'neutral') return 'neutral';
+      return 'negative';
+    }
+
+    document.getElementById('compare-form').addEventListener('submit', async function(e){
+      e.preventDefault();
+      const app1 = document.getElementById('app1').value;
+      const app2 = document.getElementById('app2').value;
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = "Analyzing...";
+
+      try {
+        const response = await fetch('/compare', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ app1, app2 })
+        });
+        const data = await response.json();
+
+        if (data.error) {
+          resultDiv.innerHTML = `<span style="color:red;">Error: ${data.error}</span>`;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="app-section">
+              <h2>${data.app1.name}</h2>
+              <div class="sentiment-box ${getSentimentClass(data.app1.roberta.sentiment)}">
+                Sentiment: ${data.app1.roberta.sentiment} (Confidence: ${(data.app1.roberta.confidence*100).toFixed(2)}%)
+              </div>
+              <p><strong>Example Review:</strong> "${data.app1.example_review}"</p>
+              <p><strong>Pros:</strong> ${data.app1.pros.join(", ")}</p>
+              <p><strong>Cons:</strong> ${data.app1.cons.join(", ")}</p>
+            </div>
+            <div class="app-section">
+              <h2>${data.app2.name}</h2>
+              <div class="sentiment-box ${getSentimentClass(data.app2.roberta.sentiment)}">
+                Sentiment: ${data.app2.roberta.sentiment} (Confidence: ${(data.app2.roberta.confidence*100).toFixed(2)}%)
+              </div>
+              <p><strong>Example Review:</strong> "${data.app2.example_review}"</p>
+              <p><strong>Pros:</strong> ${data.app2.pros.join(", ")}</p>
+              <p><strong>Cons:</strong> ${data.app2.cons.join(", ")}</p>
+            </div>
+          `;
+
+          // Add chart
+          const chartContainer = document.createElement('div');
+          const canvas = document.createElement('canvas');
+          canvas.id = "compareChart";
+          chartContainer.appendChild(canvas);
+          resultDiv.appendChild(chartContainer);
+
+          const sentimentLabels = ['Positive', 'Neutral', 'Negative'];
+          const app1Counts = [
+            data.app1.sentiment_counts.Positive,
+            data.app1.sentiment_counts.Neutral,
+            data.app1.sentiment_counts.Negative
+          ];
+          const app2Counts = [
+            data.app2.sentiment_counts.Positive,
+            data.app2.sentiment_counts.Neutral,
+            data.app2.sentiment_counts.Negative
+          ];
+
+          new Chart(canvas, {
+            type: 'bar',
+            data: {
+              labels: sentimentLabels,
+              datasets: [
+                {
+                  label: data.app1.name,
+                  data: app1Counts,
+                  backgroundColor: '#00BFA5'
+                },
+                {
+                  label: data.app2.name,
+                  data: app2Counts,
+                  backgroundColor: '#FF7043'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { labels: { color: '#E0F7FA' } }
+              },
+              scales: {
+                x: { ticks: { color: '#E0F7FA' } },
+                y: { ticks: { color: '#E0F7FA' } }
+              }
+            }
+          });
+        }
+      } catch(err) {
+        resultDiv.innerHTML = `<span style="color:red;">Error: ${err.message}</span>`;
+      }
+    });
+  </script>
+</body>
+</html>
