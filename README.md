@@ -41,7 +41,8 @@ AppTone AI is a machine learning-based web application that analyzes app reviews
 Once running, open http://127.0.0.1:5000 in your browser.
 
 ## Notes
-![landing](images/screenshot_1.png)
-![Diabetes Prediction](images/screenshot_2.png)
-![Sample Model Output](images/screenshot_3.png)
+![Landing Page](static/screenshot1.png)
+![Single App Analysis](static/screenshot2.png)
+![Data visualization](static/screenshot3.png)
+![Compare two apps](static/screenshot4.png)
 
